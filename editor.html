@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Level Editor</title>
+    <link rel="stylesheet" type="text/css" href="css/vendor/bootstrap-theme.min.css">
+    <link rel="stylesheet" type="text/css" href="css/vendor/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/vendor/jquery-ui.min.css">
+</head>
+<body>
+    <h1>Level Editor</h1>
+    <p>File Name: <input type="text" id="fileName" /> </p>
+    <p>Map Name: <input type="text" id="mapName" /></p>
+    <h2>Rooms</h2>
+    <div id="roomsDiv"></div><br/>
+    <p><button onclick="addRoom()">Add a Room</button></p>
+    <h3>Room Connections</h3>
+    <p><button onClick="updateLists()">Update Room Lists</button></p>
+    <div id="roomConnectionsDiv"></div><br/>
+    <p><button onClick="addConnection()">Add a Connection</button></p>
+    <h2>People</h2>
+    <div id="peopleDiv"></div><br/>
+    <p><button onClick="addPerson()">Add a Person</button></p>
+    <p><button  id="create">Create File</button> </p>
+    <p><a download="test.js" id="downloadLink" style="display:none">Download File</a></p>
+    <script src="js/vendor/jquery-1.11.2.min.js"></script>
+    <script src="js/vendor/jquery-ui.min.js"></script>
+    <script type="text/javascript">
+        var fileNameField = $('#fileName'), 
+            mapNameField = $('#mapName'),
+            createButton = $('#create'), 
+            downloadLink = $('#downloadLink'), 
+            roomDiv = $('#roomsDiv'),
+            peopleDiv = $('#peopleDiv');
+            connectionsDiv = $('#roomConnectionsDiv'),
+            connectionsIndex = 0,
+            roomsIndex = 0,
+            peopleIndex = 0,
+            roomArray = [], 
+            file = null;
+        
+        var updateRoomArray = function(){
+            roomArray = [];
+            var roomLoopIndex = 0;
+            while($('#roomName'.concat(roomLoopIndex)).val()){
+                roomArray.push([$('#roomName'.concat(roomLoopIndex)).val(),$('#roomDescription'.concat(roomLoopIndex)).val()]);
+            roomLoopIndex = roomLoopIndex + 1;
+            }
+        }
+            
+        var makeFile = function(){
+            updateRoomArray();
+            var mapCode = "\n// Map\nvar map = new Advent.Map();\nmap.name = '".concat(mapNameField.val(),"';\nAdvent.currentMap = map;");
+            var roomCode = "\n\n// Rooms";
+            var connectionCode = "\n\n// Connections";
+            
+            for(var i = 0; i < roomArray.length; i++){
+                roomCode = roomCode.concat('\n\nvar room',i,' = new Advent.Location();\nroom',i,'.name = "',roomArray[i][0],'";\nroom',i,'.description = "',roomArray[i][1],'";');
+            }
+            
+            roomCode = roomCode.concat('\n\nmap.playerLocation = room0;\nroom0.seen = true;');
+            
+            var connections = [];
+            var connectionLoopIndex = 0;
+            while($('#connectionStart'.concat(connectionLoopIndex)).length){
+                var connectionStart = $('#connectionStart'.concat(connectionLoopIndex)),connectionDirection = $('#connectionDirection'.concat(connectionLoopIndex)), connectionEnd = $('#connectionEnd'.concat(connectionLoopIndex)), connectionGate = $('#connectionGate'.concat(connectionLoopIndex));
+                connections.push([connectionStart.prop('selectedIndex'),connectionDirection.prop('selectedIndex'),connectionEnd.prop('selectedIndex'),connectionGate.val()]);
+                connectionLoopIndex = connectionLoopIndex + 1;
+            }
+            for(var i = 0; i < connections.length; i++){
+                var connection = connections[i];
+                connectionCode = connectionCode.concat('\n\nroom',connection[0],'.',getDirectionString(connection[1]),'Location = room',connection[2],';\nroom',connection[2],'.',getOppositeDirectionString(connection[1]),'Location = room',connection[0],';');
+                if(connection[3] != "")
+                    connectionCode = connectionCode.concat('\nroom',connection[0],'.',getDirectionString(connection[1]),'Gate = \"',connection[3],'";');
+            }
+            
+            var inputHandlingCode = "\n\nAdvent.handleInput = function (message) {\n\n}";
+            
+            var data = new Blob(['load'.concat(fileNameField.val(),' = function(){\n',mapCode,roomCode,connectionCode,inputHandlingCode,'\n}')],{type:'text/javascript'});
+            if(file !== null){
+                window.URL.revokeObjectURL(file);
+            }
+            
+            file = window.URL.createObjectURL(data);
+            
+            return file;
+        }
+        
+        var getDirectionString = function(directionInt){
+            if(directionInt == 0)
+                return "north"
+            if(directionInt == 1)
+                return "south"
+            if(directionInt == 2)
+                return "east"
+            if(directionInt == 3)
+                return "west"
+        }
+        
+        var getOppositeDirectionString = function(directionInt){
+            if(directionInt == 0)
+                return "south"
+            if(directionInt == 1)
+                return "north"
+            if(directionInt == 2)
+                return "west"
+            if(directionInt == 3)
+                return "east"
+        }
+            
+        var handleClick = function(){
+            downloadLink.attr('href',makeFile());
+            downloadLink.attr('download',fileNameField.val().concat('.js'));
+            downloadLink.css('display','block');
+        }
+        
+        createButton.attr('onClick','handleClick()');
+        
+        var addRoom = function(){
+            roomDiv.append('<div style=\'margin-bottom:8px;\'>Name:<br/><input type=\"text\" id=\"roomName'.concat(roomsIndex,'\" /><br/><br/>Description:<br/><textArea id=\"roomDescription',roomsIndex,'\"></textArea></div>'));
+            roomsIndex = roomsIndex + 1;
+        }
+        
+        var addConnection = function(){
+            connectionsDiv.append('<form style=\"width:800px;\" class=\"form-horizontal\"><div class=\"form-group\"><div class=\"col-md-3">Start:<select style=\"width:200px;\" class=\"form-control\" id=\"connectionStart'.concat(connectionsIndex,'\"></select></div><div class=\"col-md-3\">Direction:<select style=\"width:200px;\" class=\"form-control\" id=\"connectionDirection',connectionsIndex,'\"><option>north</option><option>south</option><option>east</option><option>west</option></select></div><div class=\"col-md-3\">End:<select style=\"width:200px;\" class=\"form-control\" id=\"connectionEnd',connectionsIndex,'\"></select></div><div class=\"col-md-3\">Gate (optional):<input style=\"width:200px;\" class=\"form-control\" id=\"connectionGate',connectionsIndex,'\"/></div></div></form>'));
+            connectionsIndex = connectionsIndex + 1;
+        }
+        
+        var addPerson = function(){    
+            peopleDiv.append('<div style=\'margin-bottom:8px;\'>Name:<br/><input type=\"text\" id=\"personName'.concat(peopleIndex,'\" /><br/><br/>Description:<br/><textArea id=\"personDescription',peopleIndex,'\"></textArea><br/>Status:<br/><textArea id=\"personStatus',peopleIndex,'\"></textArea></div>'));
+            peopleIndex = peopleIndex + 1;
+        
+        }
+        
+        var addLine = function(personName){
+            
+        }
+        
+        var updateLists = function(){
+            updateRoomArray();
+            var connectionLoopIndex = 0;
+            while($('#connectionStart'.concat(connectionLoopIndex)).length){
+                var startList = $('#connectionStart'.concat(connectionLoopIndex)), endList = $('#connectionEnd'.concat(connectionLoopIndex));
+                startList.find('option').remove();
+                endList.find('option').remove();
+                for(var i = 0; i < roomArray.length; i++){
+                    startList.append('<option>'.concat(roomArray[i][0],'</option>'));
+                    endList.append('<option>'.concat(roomArray[i][0],'</option>'));
+                }
+                connectionLoopIndex = connectionLoopIndex + 1;
+            }
+        }
+        
+        addRoom();
+        addConnection();
+        
+    </script>
+</body>
+</html>

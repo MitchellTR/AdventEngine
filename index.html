@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0 maximum-scale=1.0">
+    <title>The Path of Dissent</title>
+    <!-- Vendor and main CSS -->
+    <link href='http://fonts.googleapis.com/css?family=Inconsolata|Vollkorn:400italic,700italic,400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="css/vendor/bootstrap-theme.min.css">
+    <link rel="stylesheet" type="text/css" href="css/vendor/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/styles.css">
+    <link href="css/vendor/jquery-ui.min.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- Vendor JS -->
+    <script src="js/vendor/jquery-1.11.2.min.js"></script>
+    <script src="js/vendor/jquery-ui.min.js"></script>
+    <script src="js/vendor/bootstrap.min.js"></script>
+    <script src="js/vendor/fabric.min.js"></script>
+
+    <!-- Engine JS -->
+    <script src="js/advent/Advent.js"></script>
+
+    <!-- Game JS -->
+    <script src="js/levels/introLevel.js"></script>
+    <script src="js/levels/level01Scene01.js"></script>
+    <script src="js/levels/level01Scene02.js"></script>
+    <script src="js/levels/level02Scene01.js"></script>
+    <script src="js/levels/level02Scene02.js"></script>
+
+    <script type="text/javascript">
+        
+        var newGame = function(){
+            loadIntroLevel();
+        }
+        
+        var continueGame = function(){
+            var completedScene = Advent.existingSave();
+            Advent.loadPreviousGame();            
+            if(completedScene == '0'){
+                loadLevel01Scene01();
+            }else if(completedScene == '1'){
+                loadLevel02Scene01();
+            }
+        }
+        
+        //Initialize engine
+        var game = new Advent.Game();
+        var completedScene = Advent.existingSave();
+        if(completedScene){ 
+            Advent.showTitleMenu('newGame','continueGame');
+        }else{ 
+            newGame();
+        }
+
+    </script>
+</body>
+
+</html>
